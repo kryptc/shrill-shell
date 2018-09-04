@@ -1,6 +1,6 @@
 # SHRILL SHELL
 
-This is a Linux shell written in C called Shrill with basic functionalities like inbuilt commands (eg. `ls` and `cd`) along with user-defined functions (eg. `clock`, `pinfo`) and normal terminal commands that are executed from within SHRILL. It has the capability to run both background and foreground processes.
+This is a Linux shell written in C called Shrill with basic functionalities like inbuilt commands (eg. `ls` and `cd`) along with user-defined functions (eg. `clock`, `pinfo`) and normal terminal commands that are executed from within SHRILL. It has the capability to run both background and foreground processes. Also takes in semicolon separated commands.
 
 ## RUNNING
 

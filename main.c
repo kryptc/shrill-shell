@@ -13,6 +13,8 @@
 #include <time.h>
 #include "headers.h"
 
+char homedir[1004];
+char prev_dir[1004];
 
 void display_prompt(char * homedir)
 {
@@ -65,9 +67,9 @@ void shrill_loop()
   int loop_status;
 
   //pwd stores path of current directory
-  char homedir[1004];
   getcwd(homedir, 1000);
 
+  strcpy(prev_dir, homedir);
 
   int flag = 1;
   char str[1005];
@@ -114,7 +116,7 @@ void shrill_loop()
     	loop_status = shrill_execute(args, proc_list, &proc_name, &proc_count);
     	j++;
     	free(args);
-    	printf("\n");
+    	// printf("\n");
     }
 
     free(line);

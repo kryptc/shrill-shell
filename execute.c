@@ -90,7 +90,7 @@ int shrill_execute(char ** str, int * proc_list, char ** proc_name, int *proc_co
 			{
 				if(execvp(str[0], str) == -1)
 			       printf("%s: command not found\n",str[0]);
-				    // _exit(0);
+				    _exit(0);
 			}
 			else if (pid < 0)
 			//error in forking
@@ -120,7 +120,6 @@ int shrill_execute(char ** str, int * proc_list, char ** proc_name, int *proc_co
 					//increment the process count
 					(*proc_count)++;
 				}
-
 			}
 		}
 

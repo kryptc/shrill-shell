@@ -193,8 +193,6 @@ void ls(char ** str)
 	    	}
 	    }
 	    closedir(dr);
-	    printf("\n");
-
 
 	}
 }
