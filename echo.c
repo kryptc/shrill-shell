@@ -8,11 +8,20 @@ void echo_func(char ** str)
 	int i = 1;
 	while (str[i] != NULL)
 	{
-		for (int j = 0; j < strlen(str[i]); j++)
-		{
-			if (str[i][j] != '"' && str[i][j] != '\'')
-				printf("%c",str[i][j] );
-		}
+		if(str[i][0]=='$')
+  		{
+  			if(getenv(str[i]+1) != NULL)
+  				printf("%s", getenv(str[i]+1));
+  		}
+  		else
+  		{
+  			for (int j = 0; j < strlen(str[i]); j++)
+			{
+				if (str[i][j] != '"' && str[i][j] != '\'')
+					printf("%c",str[i][j] );
+			}
+  		}
+		
 		printf(" ");
 		i++;
 	}

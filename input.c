@@ -5,6 +5,24 @@
 
 #define SHRILL_TOK_DELIM " \t\r\n\a"
 #define SHRILL_CMD_DELIM ";"
+#define SHRILL_PIP_DELIM "|"
+
+char **shrill_split_pip(char *line)
+{
+  int i = 0;
+  char **tokens = malloc(2000 * sizeof(char*));
+  char *token;
+
+  token = strtok(line, SHRILL_PIP_DELIM);
+  while (token != NULL) 
+  {
+    tokens[i] = token;
+    i++;
+    token = strtok(NULL, SHRILL_PIP_DELIM);
+  }
+  tokens[i] = NULL;
+  return tokens;
+}
 
 char **shrill_split_cmd(char *line)
 {
@@ -39,6 +57,20 @@ char **shrill_split_line(char *line)
   tokens[i] = NULL;
   return tokens;
 }
+
+// char * parse_line(char * str)
+// {
+//     // for (int i = 0; str[i] != NULL; i++)
+//     // {
+//       for (int j = 0; str[j] != '\0'; j++)
+//         if (str[j] == '&') 
+//         {
+//           str[j] = ' ';
+//           break;
+//         }
+//     // }
+//     return str;
+// }
 
 
 char *shrill_read_line(void)

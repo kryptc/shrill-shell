@@ -6,7 +6,7 @@
 #include<dirent.h>
 
 #include <sys/wait.h>
-
+#include <signal.h>
 #include<sys/stat.h>
 #include<sys/types.h>
 #include <grp.h>
@@ -15,6 +15,19 @@
 
 char homedir[1004];
 char prev_dir[1004];
+int root_pid;
+int clockf = 0;
+
+typedef struct 
+{
+  int id;
+  char name[100];
+  int status;
+} Proc;
+
+int proc_count;
+
+Proc proc_arr[100];
 
 void display_prompt(char * homedir)
 {
@@ -60,10 +73,41 @@ void display_prompt(char * homedir)
 	printf("%s%s@%s%s:%s%s>","\033[0;31m",username,sysname,"\033[0;36m",dirhandle,"\033[0m");
 }
 
+
+//signal handlers
+
+void interruptHandler()
+{
+	clockf = 0;
+
+	if (getpid() != root_pid)
+	{
+		// printf("\n");
+		// display_prompt(homedir);
+		return;
+	}
+	signal(SIGINT, interruptHandler);
+	fflush(stdout); 
+}
+
+//FIX THISSSSS!!!
+void stopHandler()
+{
+	clockf = 0;
+	if (getpid() != root_pid)
+		return;
+	signal(SIGTSTP, SIG_IGN);
+
+	// signal(SIGTSTP, stopHandler);
+ 	// perror("Ctrl + Z detected");
+ 	return;
+}
+
+
 void shrill_loop()
 {
   char *line;
-  char **args, **c_args;
+  char **args, **c_args, **p_args;
   int loop_status;
 
   //pwd stores path of current directory
@@ -78,44 +122,61 @@ void shrill_loop()
   int status;
   pid_t pid;
 
-  int * proc_list = malloc(100 * sizeof(int));
-  char * proc_name = malloc(100 * sizeof(char));
-  int proc_count = 0;
+  //ctrl+c
+  signal(SIGINT, interruptHandler);
+   //idk some signal
+  // signal(SIGQUIT, SIG_IGN);
+  //don't comment this out in case everything goes to hell
+  //ctrl+z
+  signal(SIGTSTP, stopHandler);
 
-
+  signal(SIGTTOU, SIG_IGN);
 
   do {
-
+ 
     //call print prompt function
     display_prompt(homedir);
+
+ //    struct sigaction sVal;
+	// sVal.sa_flags = SA_RESTART;
+	// sVal.sa_sigaction = &signalHandler;
 
     line = shrill_read_line();
     c_args = shrill_split_cmd(line);
     int j = 0;
     while (c_args[j] != NULL)
     {
-
 		while((pid = waitpid(-1, &status, WNOHANG)) > 0) 
 		{
 	     	//here we remove the pid from the jobs list
 	     	char pname[100];
-			for (int k = 0; k < proc_count; k++)
-				if (proc_list[k] == pid)
+			for (int k = 1; k <= proc_count; k++)
+				// if (proc_arr[k].id == pid && proc_arr[k].status == 1)
+				if (proc_arr[k].id == pid)
+
 				{
-					strcpy(pname, &proc_name[k]);
-					proc_list[k] = -1;
+					strcpy(pname, proc_arr[k].name);
+					proc_arr[k].status = 0; //stopped
 				}
+
 
 			if (WEXITSTATUS(status) == 0)
 				printf("%s with pid %d exited normally\n",pname, pid);
 			else
 				printf("%s with pid %d exited abnormally\n",pname, pid);
 	    }
+	    
+	    // p_args = shrill_split_pip(c_args[j]);
+	    // int p = 0;
 
-    	args = shrill_split_line(c_args[j]);
-    	loop_status = shrill_execute(args, proc_list, &proc_name, &proc_count);
-    	j++;
-    	free(args);
+	    // while (p_args[p] != NULL)
+	    // {
+	    	args = shrill_split_line(c_args[j]);
+	    	loop_status = shrill_execute(args);
+	    	j++;
+	    	free(args);
+	    // }
+    	
     	// printf("\n");
     }
 
@@ -127,6 +188,7 @@ void shrill_loop()
 
 int main(int argc, char **argv)
 {
+	root_pid = getpid();
 	shrill_loop();
 	return 0;
 }

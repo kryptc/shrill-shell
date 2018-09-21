@@ -1,17 +1,35 @@
 #include<stdio.h>
 #include<unistd.h>
-#include<sys/stat.h>
-#include<sys/types.h>
 #include<stdlib.h>
+#include <fcntl.h>
 #include <string.h>
 #include <sys/wait.h>
 #include<sys/stat.h>
 #include<sys/types.h>
 #include "headers.h"
 
-
-int shrill_execute(char ** str, int * proc_list, char ** proc_name, int *proc_count)
+typedef struct 
 {
+  int id;
+  char name[100];
+  int status;
+
+} Proc;
+
+extern int proc_count;
+
+extern Proc proc_arr[100];
+
+extern int root_pid;
+extern int clockf;
+
+int shrill_execute(char ** str)
+{
+
+	int outrednum = 0, apprednum = 0;
+	char outfile[10][30], inpfile[30], appfile[10][30];
+	int file;
+	int iflag = 0;
 
 	//display another prompt if nothing is entered
 	if (*str == NULL)
@@ -21,6 +39,7 @@ int shrill_execute(char ** str, int * proc_list, char ** proc_name, int *proc_co
 	if (strcmp(str[0], "quit") == 0)
 			exit(0);
 
+	int cnt =0;
 	int background = 0;
 	for (int i = 0; str[i] != NULL; i++)
 	{
@@ -31,6 +50,82 @@ int shrill_execute(char ** str, int * proc_list, char ** proc_name, int *proc_co
 				str[i][j] = '\0';
 				break;
 			}
+		cnt++;
+	}
+	printf("count=%d\n",cnt );
+
+	for (int i = 0; i < cnt; i++)
+	{
+			if (strcmp(str[i], ">>")==0)
+			{
+				strcpy(appfile[apprednum], str[i+1]);
+				apprednum++;
+				str[i][0] = '\0';
+				str[i][1] = '\0';
+				str[i+1] = '\0';
+				i++;
+
+			}
+			//input redirection
+			else if (strcmp(str[i], "<")==0)
+			{
+				strcpy(inpfile, str[i+1]);
+				iflag = 1;
+				str[i] = '\0';
+				str[i+1] = '\0';
+				i++;
+			}
+			//output redirection
+			else if (strcmp(str[i], ">")==0)
+			{
+				strcpy(outfile[outrednum], str[i+1]);
+				outrednum++;
+				str[i] = '\0';
+				str[i+1] = '\0';
+				i++;
+
+			}
+		
+		printf("i=%d\n",i );
+	}	
+
+    for (int i = 0; i < outrednum; i++)
+    {
+      file = open(outfile[i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+      if (file < 0) 
+      	perror("Error opening output file");
+      if (dup2 (file, 1) < 0) 
+      	perror("Error - output duping");
+      close(file);
+    }
+
+    if (iflag)
+    {
+    	file = open(inpfile, O_RDONLY, 0);
+	    if (file < 0) 
+	     	perror("Input file doesn't exist");
+	    if (dup2(file, 0) < 0) 
+	    	("Error - input duping");
+	    close(file);
+    }
+
+    for (int i = 0; i < apprednum; i++)
+    {
+      file = open(appfile[i], O_WRONLY | O_APPEND | O_CREAT, 0644);
+      if (file < 0) 
+      	perror("Error opening the output file");
+      if ( dup2 (file, 1) < 0) 
+      	perror("Error while appending");
+      close(file);
+    }
+
+
+    for (int i = 0; str[i] != NULL; i++)
+	{
+		if (str[i][0] == '\0') 
+		{
+			str[i] = NULL;
+		}
 	}
 
 
@@ -48,7 +143,6 @@ int shrill_execute(char ** str, int * proc_list, char ** proc_name, int *proc_co
 		{
 			cd(str);
 		}
-
 
 		//echoes whatever is typed
 		else if (strcmp(str[0], "echo") == 0)
@@ -79,7 +173,38 @@ int shrill_execute(char ** str, int * proc_list, char ** proc_name, int *proc_co
 
 		else if (strcmp(str[0], "clock") == 0)
 		{
+			clockf = 1;
 			clock_func(str);
+		}
+
+		else if (strcmp(str[0], "jobs") == 0)
+		{
+			jobs(str);
+		}
+
+		else if (strcmp(str[0], "kjob") == 0)
+		{
+			kjob(str);
+		}
+		else if (strcmp(str[0], "overkill") == 0)
+		{
+			overkill();
+		}
+		else if (strcmp(str[0], "fg") == 0)
+		{
+			fg(str);
+		}
+		else if (strcmp(str[0], "bg") == 0)
+		{
+			bg(str);
+		}
+		else if (strcmp(str[0], "setenv") == 0)
+		{
+			setenv_func(str);
+		}
+		else if (strcmp(str[0], "unsetenv") == 0)
+		{
+			unsetenv_func(str);
 		}
 
 		//execute commands with execvp here
@@ -114,11 +239,16 @@ int shrill_execute(char ** str, int * proc_list, char ** proc_name, int *proc_co
 
 				else
 				{
-					//add process to process list
-					proc_list[*proc_count] = (int) pid;
-					strcpy(proc_name[*proc_count],str[0]);
 					//increment the process count
-					(*proc_count)++;
+					proc_count++;
+					//add process to process list
+					proc_arr[proc_count].id = (int) pid;
+      			    strcpy(proc_arr[proc_count].name, str[0]);
+      			    proc_arr[proc_count].status = 1;
+					// proc_list[*proc_count] = (int) pid;
+					// strcpy(proc_name[*proc_count],str[0]);
+					// proc_stat[*proc_count] = 1; //running
+					
 				}
 			}
 		}

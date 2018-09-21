@@ -7,10 +7,11 @@
 #include <time.h>
 #include<string.h>
 
+extern int clockf;
 
 void clock_func(char ** str)
 {
-	while(1)
+	while(clockf)
 	{
 		char clk[1000];
 		strcpy(clk,"/sys/class/rtc/rtc0");
