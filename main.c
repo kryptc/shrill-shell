@@ -25,7 +25,7 @@ typedef struct
   int status;
 } Proc;
 
-int proc_count;
+int proc_count = 0;
 
 Proc proc_arr[100];
 

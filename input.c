@@ -58,20 +58,6 @@ char **shrill_split_line(char *line)
   return tokens;
 }
 
-// char * parse_line(char * str)
-// {
-//     // for (int i = 0; str[i] != NULL; i++)
-//     // {
-//       for (int j = 0; str[j] != '\0'; j++)
-//         if (str[j] == '&') 
-//         {
-//           str[j] = ' ';
-//           break;
-//         }
-//     // }
-//     return str;
-// }
-
 
 char *shrill_read_line(void)
 {
@@ -80,3 +66,4 @@ char *shrill_read_line(void)
   getline(&line, &bufsize, stdin);
   return line;
 }
+

@@ -19,6 +19,7 @@ Proc proc_arr[100];
 
 void jobs (char ** str)
 {
+	// printf("jobct=%d\n", proc_count);
 	char statusv[20];
 	for (int i = 1; i <= proc_count; i++)
 	{
@@ -27,10 +28,10 @@ void jobs (char ** str)
 			else if (proc_arr[i].status == 2)
 				strcpy(statusv, "Stopped");
 			else if (proc_arr[i].status == 0)
-				return;
+				continue;
 			//reads formatted inout from string line_buffer
 			printf("[%d] %s %s [%d]\n", i, statusv, proc_arr[i].name, proc_arr[i].id);
 			// printf("%s\n",statusarr[i] );
 	}
 
-}
+}	

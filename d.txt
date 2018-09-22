@@ -1,5 +1,0 @@
-/home/kripa/Desktop/2-1/OS/assignments/20171159_2
-[0;31mkripa@kryptonite[0;36m:~[0m>[0;31mkripa@kryptonite[0;36m:~[0m>[0;31mkripa@kryptonite[0;36m:~[0m>[0;31mkripa@kryptonite[0;36m:~[0m>[0;31mkripa@kryptonite[0;36m:~[0m>count=1
-i=0
-\\\: command not found
-[0;31mkripa@kryptonite[0;36m:~[0m>

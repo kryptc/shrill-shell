@@ -26,9 +26,12 @@ extern int clockf;
 int shrill_execute(char ** str)
 {
 
+	pid_t pid, wpid;
+	int status;
+
 	int outrednum = 0, apprednum = 0;
 	char outfile[10][30], inpfile[30], appfile[10][30];
-	int file;
+	int file, fd;
 	int iflag = 0;
 
 	//display another prompt if nothing is entered
@@ -52,86 +55,119 @@ int shrill_execute(char ** str)
 			}
 		cnt++;
 	}
-	printf("count=%d\n",cnt );
+	// printf("count=%d\n",cnt );
 
-	for (int i = 0; i < cnt; i++)
+	int sofuckingdone = 0;
+
+	for ( int i = 0; i < cnt; i ++)
+		for(int j = 0; str[i][j] != '\0'; j++)
+			if (str[i][j] == '>' || str[i][j] == '<')
+				sofuckingdone = 1;
+			else if (str[i][j] == '|')
+				sofuckingdone = 2;
+
+
+	if (sofuckingdone == 1)
 	{
-			if (strcmp(str[i], ">>")==0)
+		pid = fork();
+
+		if (pid == 0)
+		{	
+			for (int i = 0; i < cnt; i++)
 			{
-				strcpy(appfile[apprednum], str[i+1]);
-				apprednum++;
-				str[i][0] = '\0';
-				str[i][1] = '\0';
-				str[i+1] = '\0';
-				i++;
+					if (strcmp(str[i], ">>")==0)
+					{
+						strcpy(appfile[apprednum], str[i+1]);
+						apprednum++;
+						str[i][0] = '\0';
+						str[i][1] = '\0';
+						str[i+1] = '\0';
+						i++;
 
-			}
-			//input redirection
-			else if (strcmp(str[i], "<")==0)
+					}
+					//input redirection
+					else if (strcmp(str[i], "<")==0)
+					{
+						strcpy(inpfile, str[i+1]);
+						iflag = 1;
+						str[i] = '\0';
+						str[i+1] = '\0';
+						i++;
+					}
+					//output redirection
+					else if (strcmp(str[i], ">")==0)
+					{
+						strcpy(outfile[outrednum], str[i+1]);
+						outrednum++;
+						str[i] = '\0';
+						str[i+1] = '\0';
+						i++;
+
+					}
+				
+			}	
+
+
+		    if (iflag)
+		    {
+		    	int fd;
+		    	fd = open(inpfile, O_RDONLY, 0);
+
+			    if (fd < 0) 
+			     	perror("Input file doesn't exist");
+			    if (dup2(fd, 0) < 0) 
+			    	perror("Error - input duping");
+			    close(fd);
+		    }
+
+		    for (int i = 0; i < outrednum; i++)
+		    {
+		    	  int file;
+			      file = open(outfile[i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+			      if (file < 0) 
+			      {
+			      	perror("Error opening the output file");
+			      	exit(0);
+			      }
+			      if ( dup2 (file, 1) < 0) 
+			      	perror("Error while appending");
+			      close(file);
+
+		    }
+
+		    for (int i = 0; i < apprednum; i++)
+		    {
+		    	  int file;
+			      file = open(appfile[i], O_WRONLY | O_APPEND | O_CREAT, 0644);
+			      if (file < 0) 
+			      	perror("Error opening the append output file");
+			      if ( dup2 (file, 1) < 0) 
+			      	perror("Error while appending");
+			      close(file);
+			 }
+
+		    if (execvp(str[0],str)<0)	
 			{
-				strcpy(inpfile, str[i+1]);
-				iflag = 1;
-				str[i] = '\0';
-				str[i+1] = '\0';
-				i++;
+				// r=1; 
+				printf("%s: Command doesn't exist\n", str[0]);
 			}
-			//output redirection
-			else if (strcmp(str[i], ">")==0)
-			{
-				strcpy(outfile[outrednum], str[i+1]);
-				outrednum++;
-				str[i] = '\0';
-				str[i+1] = '\0';
-				i++;
-
-			}
-		
-		printf("i=%d\n",i );
-	}	
-
-    for (int i = 0; i < outrednum; i++)
-    {
-      file = open(outfile[i], O_WRONLY | O_TRUNC | O_CREAT, 0644);
-      if (file < 0) 
-      	perror("Error opening output file");
-      if (dup2 (file, 1) < 0) 
-      	perror("Error - output duping");
-      close(file);
-    }
-
-    if (iflag)
-    {
-    	file = open(inpfile, O_RDONLY, 0);
-	    if (file < 0) 
-	     	perror("Input file doesn't exist");
-	    if (dup2(file, 0) < 0) 
-	    	("Error - input duping");
-	    close(file);
-    }
-
-    for (int i = 0; i < apprednum; i++)
-    {
-      file = open(appfile[i], O_WRONLY | O_APPEND | O_CREAT, 0644);
-      if (file < 0) 
-      	perror("Error opening the output file");
-      if ( dup2 (file, 1) < 0) 
-      	perror("Error while appending");
-      close(file);
-    }
-
-
-    for (int i = 0; str[i] != NULL; i++)
-	{
-		if (str[i][0] == '\0') 
-		{
-			str[i] = NULL;
 		}
+		else
+			{
+				wait(NULL);
+			}
 	}
-
-
-	pid_t pid, wpid;
-	int status;
-
+	
+	else
+	{
+		// printf("check1\n");
+	  	for (int i = 0; str[i] != NULL; i++)
+		{
+			if (str[i][0] == '\0') 
+			{
+				str[i] = NULL;
+			}
+		}
 		//gives current working directory
 		if (strcmp(str[0], "pwd") == 0)
 		{
@@ -252,6 +288,9 @@ int shrill_execute(char ** str)
 				}
 			}
 		}
+    // printf("check2\n");
 
 	return 0;
+}
+    
 }
