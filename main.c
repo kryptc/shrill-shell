@@ -134,53 +134,105 @@ void shrill_loop()
 
   do {
  
-    //call print prompt function
-    display_prompt(homedir);
+	    //call print prompt function
+	    display_prompt(homedir);
 
- //    struct sigaction sVal;
-	// sVal.sa_flags = SA_RESTART;
-	// sVal.sa_sigaction = &signalHandler;
+	    line = shrill_read_line();
+	    c_args = shrill_split_cmd(line);
+	    int j = 0;
+	    while (c_args[j] != NULL)
+	    {
+			while((pid = waitpid(-1, &status, WNOHANG)) > 0) 
+			{
+		     	//here we remove the pid from the jobs list
+		     	char pname[100];
+				for (int k = 1; k <= proc_count; k++)
+					// if (proc_arr[k].id == pid && proc_arr[k].status == 1)
+					if (proc_arr[k].id == pid)
 
-    line = shrill_read_line();
-    c_args = shrill_split_cmd(line);
-    int j = 0;
-    while (c_args[j] != NULL)
-    {
-		while((pid = waitpid(-1, &status, WNOHANG)) > 0) 
-		{
-	     	//here we remove the pid from the jobs list
-	     	char pname[100];
-			for (int k = 1; k <= proc_count; k++)
-				// if (proc_arr[k].id == pid && proc_arr[k].status == 1)
-				if (proc_arr[k].id == pid)
-
-				{
-					strcpy(pname, proc_arr[k].name);
-					proc_arr[k].status = 0; //stopped
-				}
+					{
+						strcpy(pname, proc_arr[k].name);
+						proc_arr[k].status = 0; //stopped
+					}
 
 
-			if (WEXITSTATUS(status) == 0)
-				printf("%s with pid %d exited normally\n",pname, pid);
+				if (WEXITSTATUS(status) == 0)
+					printf("%s with pid %d exited normally\n",pname, pid);
+				else
+					printf("%s with pid %d exited abnormally\n",pname, pid);
+		    }
+
+		    int endthismisery = 0;
+
+		    for ( int i = 0; c_args[i] != NULL; i ++)
+				for(int j = 0; c_args[i][j] != '\0'; j++)
+					if (c_args[i][j] == '|' )
+						endthismisery = 1;
+
+			if (endthismisery)
+			{
+				int user_pipe[2];
+
+				if (pipe(user_pipe) != 0)
+			    	perror("Pipe not created properly");
+
+				pid_t pidin = 0, pidout = 1, pipe_proc;
+				int yeet = 0;
+				p_args = shrill_split_pip(c_args[j]);
+			   
+			    for (int p = 0; p_args[p] != NULL; p++)
+			    {
+			    	args = shrill_split_line(p_args[p]);
+					pipe(user_pipe);
+
+			    	pipe_proc = fork();
+		    	    if (pipe_proc == 0) 
+		    	    {
+				    	// Child process
+				    	dup2(yeet, 0);
+				        // close(0); // Release fd no - 0
+				        if (p_args[p + 1] != NULL)
+				        	dup2(user_pipe[1], 1);
+				        close(user_pipe[0]); // Close pipe fds since useful one is duplicated
+			    		loop_status = shrill_execute(args);
+			    		free(args);
+
+			    		exit(0);
+
+				    } 
+				    else if (pipe_proc < 0)
+				    {
+				    	perror("Forking went wrong");
+				    	exit(0);
+				    }
+				    else
+				    {
+				    	do
+						{
+					  		waitpid(pid, &status, WUNTRACED);
+						}
+						while (!WIFEXITED(status) && !WIFSIGNALED(status));
+						close(user_pipe[1]);
+						yeet = user_pipe[0];
+						j++;
+
+				    }
+
+			    }
+
+			}
 			else
-				printf("%s with pid %d exited abnormally\n",pname, pid);
+			{
+				args = shrill_split_line(c_args[j]);
+		    	loop_status = shrill_execute(args);
+		    	free(args);
+			}
+		    
+		    j++;
+	    	
 	    }
-	    
-	    // p_args = shrill_split_pip(c_args[j]);
-	    // int p = 0;
 
-	    // while (p_args[p] != NULL)
-	    // {
-	    	args = shrill_split_line(c_args[j]);
-	    	loop_status = shrill_execute(args);
-	    	j++;
-	    	free(args);
-	    // }
-    	
-    	// printf("\n");
-    }
-
-    free(line);
+	    free(line);
 
     } while(1);
 }

@@ -63,11 +63,11 @@ int shrill_execute(char ** str)
 		for(int j = 0; str[i][j] != '\0'; j++)
 			if (str[i][j] == '>' || str[i][j] == '<')
 				sofuckingdone = 1;
-			else if (str[i][j] == '|')
-				sofuckingdone = 2;
+			// else if (str[i][j] == '|')
+			// 	sofuckingdone = 2;
 
 
-	if (sofuckingdone == 1)
+	if (sofuckingdone)
 	{
 		pid = fork();
 
