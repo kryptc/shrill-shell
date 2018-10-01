@@ -4,7 +4,6 @@
 #include<pwd.h>
 #include<string.h>
 #include<dirent.h>
-
 #include <sys/wait.h>
 #include <signal.h>
 #include<sys/stat.h>
@@ -16,7 +15,9 @@
 char homedir[1004];
 char prev_dir[1004];
 int root_pid;
+int curr_pid;
 int clockf = 0;
+char ** global_arr;
 
 typedef struct 
 {
@@ -86,6 +87,7 @@ void interruptHandler()
 		// display_prompt(homedir);
 		return;
 	}
+
 	signal(SIGINT, interruptHandler);
 	fflush(stdout); 
 }
@@ -94,13 +96,23 @@ void interruptHandler()
 void stopHandler()
 {
 	clockf = 0;
-	if (getpid() != root_pid)
+	if ( getpid()!= root_pid)
 		return;
-	signal(SIGTSTP, SIG_IGN);
 
-	// signal(SIGTSTP, stopHandler);
- 	// perror("Ctrl + Z detected");
- 	return;
+	// if (curr_pid == root_pid)
+	// 	printf("equal\n");
+	if (curr_pid > 0)
+	{
+		proc_count++;
+		//add process to process list
+		proc_arr[proc_count].id = curr_pid;
+	    strcpy(proc_arr[proc_count].name, global_arr[0]);
+	    proc_arr[proc_count].status = 2;
+	    // kill(curr_pid, SIGTTIN);
+		kill(curr_pid, SIGTSTP);
+	}
+
+	return;
 }
 
 
@@ -127,12 +139,22 @@ void shrill_loop()
    //idk some signal
   // signal(SIGQUIT, SIG_IGN);
   //don't comment this out in case everything goes to hell
+
   //ctrl+z
   signal(SIGTSTP, stopHandler);
+  // signal(SIGSTOP, stopHandler);
+
+  //signal(SIGSTOP, SIG_IGN);
+  // signal(SIGTSTP, SIG_IGN);
 
   signal(SIGTTOU, SIG_IGN);
+  // curr_pid = getpid();
+
+  setpgid(root_pid, root_pid);
+  tcsetpgrp(0, root_pid);
 
   do {
+  		curr_pid = -1;
  
 	    //call print prompt function
 	    display_prompt(homedir);
@@ -183,6 +205,7 @@ void shrill_loop()
 			    for (int p = 0; p_args[p] != NULL; p++)
 			    {
 			    	args = shrill_split_line(p_args[p]);
+			    	global_arr = args;
 					pipe(user_pipe);
 
 			    	pipe_proc = fork();
@@ -224,6 +247,7 @@ void shrill_loop()
 			else
 			{
 				args = shrill_split_line(c_args[j]);
+				global_arr = args;
 		    	loop_status = shrill_execute(args);
 		    	free(args);
 			}

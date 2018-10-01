@@ -21,6 +21,8 @@ extern int proc_count;
 extern Proc proc_arr[100];
 
 extern int root_pid;
+extern int curr_pid;
+
 extern int clockf;
 
 int shrill_execute(char ** str)
@@ -40,7 +42,9 @@ int shrill_execute(char ** str)
 	
 	//quits shell
 	if (strcmp(str[0], "quit") == 0)
+	{
 			exit(0);
+	}
 
 	int cnt =0;
 	int background = 0;
@@ -247,8 +251,18 @@ int shrill_execute(char ** str)
 		else
 		{
 			pid = fork();
+			curr_pid = pid;
+
 			if (pid == 0)
 			{
+				if (background == 1)
+				{
+					signal(SIGINT, SIG_DFL);
+					signal(SIGTTIN, SIG_DFL);
+					signal(SIGTTOU, SIG_DFL);
+					signal(SIGCHLD, SIG_DFL);
+					setpgid(getpid(), pid);
+				}
 				if(execvp(str[0], str) == -1)
 			       printf("%s: command not found\n",str[0]);
 				    _exit(0);
@@ -261,15 +275,15 @@ int shrill_execute(char ** str)
 			}
 
 			else
-			{
+			{	
 				//parent process
 				if (background == 0)
 				{
-					do
-					{
+					// do
+					// {
 				  		wpid = waitpid(pid, &status, WUNTRACED);
-					}
-					while (!WIFEXITED(status) && !WIFSIGNALED(status));
+					// }
+					// while (!WIFEXITED(status) && !WIFSIGNALED(status));
 					// exit(0);
 				}
 
